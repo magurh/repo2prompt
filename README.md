@@ -2,17 +2,36 @@
 
 Turn a Github Repo's contents into a big prompt for long-context models like Claude 3 Opus.
 
-This repository is forked from 
+## Setup
 
-<a target="_blank" href="https://colab.research.google.com/github/andrewgcodes/repo2prompt/blob/main/repo2prompt.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a>
+The repository uses `uv` for dependency management. 
+Run:
 
-Super easy:
-You will need a Github repo URL (public) and a Github access token. You can also use this with private repos but your token will need to have those permissions.
+```bash
+uv sync --all-extras
+```
 
-Within the build_directory_tree function, you can specify which file extensions should be included in the output.
 
-The output is saved to a .txt file with name [repo]-formatted-prompt.txt
+Introduce the desired Github repository URL into the `.env` file. 
+For better rate limit, generate a Github access token, as described here.
+Note, however, that Github is still limited to 5,000 API requests per hour even with a token.
+For private repositories, make sure that the token has the appropriate permissions.
 
-By the way, Github is limited to 5,000 API requests per hour so if a bug happens, that might be why!
+Run the `main` script using:
+
+```bash
+uv run python -m src.main
+```
+
+The output is saved to a `.txt` file with name `[repo]-formatted-prompt.txt`, in the `data` folder.
+
+
+##  Description
+
+This repository is forked from andrewgcodes repo2prompt, and includes various improvements:
+
+* Cleaner structure, formatting, and direct script running.
+* Using GitHub `tree` API for recursive directory retrieval
+
+
+
