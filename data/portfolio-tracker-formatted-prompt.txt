@@ -58,25 +58,24 @@ LICENSE
 README.md
 __init__.py
 [assets/]
-    dark_mode.css
+assets/dark_mode.css
 [data/]
-    type1.csv
-    type2.csv
-    type3.csv
+data/type1.csv
+data/type2.csv
+data/type3.csv
 [notebooks/]
-    testing.ipynb
+notebooks/testing.ipynb
 [portfolio_tracker/]
-    __init__.py
-    app.py
-    config.py
-    data_fetching.py
-    layout.py
-    loader.py
-    manager.py
-    utils.py
+portfolio_tracker/__init__.py
+portfolio_tracker/app.py
+portfolio_tracker/config.py
+portfolio_tracker/data_fetching.py
+portfolio_tracker/layout.py
+portfolio_tracker/loader.py
+portfolio_tracker/manager.py
+portfolio_tracker/utils.py
 pyproject.toml
 uv.lock
-
 
 README.md:
 ```
@@ -137,8 +136,8 @@ __init__.py:
 
 ```
 
-    assets/dark_mode.css:
-    ```
+assets/dark_mode.css:
+```
 .dark-dropdown .Select-control {
     background-color: #1e1e1e !important;
     color: #e0e0e0 !important;
@@ -192,10 +191,10 @@ h1, h2, h3, h4, h5, h6 {
     color: #ffffff; /* Ensure headers are white */
 }
 
-    ```
+```
 
-    notebooks/testing.ipynb:
-    ```
+notebooks/testing.ipynb:
+```
 {
  "cells": [
   {
@@ -1036,15 +1035,15 @@ h1, h2, h3, h4, h5, h6 {
  "nbformat_minor": 5
 }
 
-    ```
+```
 
-    portfolio_tracker/__init__.py:
-    ```
+portfolio_tracker/__init__.py:
+```
 
-    ```
+```
 
-    portfolio_tracker/app.py:
-    ```
+portfolio_tracker/app.py:
+```
 from portfolio_tracker.layout import create_layout
 from portfolio_tracker.loader import DataLoader
 from portfolio_tracker.manager import PortfolioManager
@@ -1069,10 +1068,10 @@ app.layout = create_layout(realized_gains_df, portfolio_overview)
 if __name__ == "__main__":
     app.run_server(debug=True)
 
-    ```
+```
 
-    portfolio_tracker/config.py:
-    ```
+portfolio_tracker/config.py:
+```
 from dataclasses import dataclass
 from pathlib import Path
 from portfolio_tracker.utils import get_data_folder_path
@@ -1114,10 +1113,10 @@ def format_dataframe(df):
     df[DATE_COLUMN] = df[DATE_COLUMN].dt.strftime("%d-%m-%Y")
     return df
 
-    ```
+```
 
-    portfolio_tracker/data_fetching.py:
-    ```
+portfolio_tracker/data_fetching.py:
+```
 import pandas as pd
 
 import yfinance as yf
@@ -1223,10 +1222,10 @@ def fetch_crypto_price(symbol, currency="USD"):
 
     return price if currency == "USD" else price * fetch_exchange_rate("USD", currency)
 
-    ```
+```
 
-    portfolio_tracker/layout.py:
-    ```
+portfolio_tracker/layout.py:
+```
 import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import dcc, html
@@ -1361,10 +1360,10 @@ def create_layout(df_realized_gains: pd.DataFrame, portfolio_overview: pd.DataFr
         className="p-4",
     )
 
-    ```
+```
 
-    portfolio_tracker/loader.py:
-    ```
+portfolio_tracker/loader.py:
+```
 """
 There are 3 types of datasets:
 1. type1: ['date', 'security', 'type_of_asset', 'action', 'quantity', 'total_transaction_price_usd']
@@ -1430,10 +1429,10 @@ class DataLoader:
     def get_type3_data(self):
         return self.type3_df
 
-    ```
+```
 
-    portfolio_tracker/manager.py:
-    ```
+portfolio_tracker/manager.py:
+```
 import pandas as pd
 from collections import deque
 
@@ -1750,10 +1749,10 @@ class PortfolioManager:
         }
 
         return pd.DataFrame(overview).set_index("Metric")
-    ```
+```
 
-    portfolio_tracker/utils.py:
-    ```
+portfolio_tracker/utils.py:
+```
 import os
 
 
@@ -1775,4 +1774,5 @@ def get_data_folder_path(data_type: str = "public"):
 
     return os.path.abspath(data_folder)
 
-    ```
+```
+

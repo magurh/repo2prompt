@@ -13,7 +13,7 @@ def parse_github_url(url: str) -> tuple[str, str]:
         raise ValueError("Invalid GitHub URL provided!")
 
 
-def fetch_repo_content(owner: str, repo: str, path: str = "", token: str = None):
+def fetch_repo_content(owner: str, repo: str, path: str = "", token: str = None) -> dict:
     """Fetch the content of the GitHub repository."""
     base_url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
     headers = {"Accept": "application/vnd.github.v3+json"}
@@ -22,6 +22,16 @@ def fetch_repo_content(owner: str, repo: str, path: str = "", token: str = None)
     response = requests.get(base_url, headers=headers)
     response.raise_for_status()  # Raise an error for non-200 responses
     return response.json()
+
+def fetch_repo_tree(owner: str, repo: str, token: str = None, branch: str = "main") -> dict:
+    """Fetch the full repository tree recursively."""
+    url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch}?recursive=1"
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()  # Raise an error for non-200 responses
+    return response.json()["tree"]  # Returns the "tree" list
 
 
 def get_file_content(file_info: dict) -> str:
