@@ -23,7 +23,12 @@ Run the `main` script using:
 uv run python -m src.main
 ```
 
-The output is saved to a `.txt` file with name `[repo]-formatted-prompt.txt`, in the `data` folder.
+The output is saved to a `.txt` file with name `[repo]-formatted-prompt.txt`, in the `data` folder. 
+To check the number of remaining API calls run:
+
+```bash
+uv run python -m src.utils.rate_limit
+```
 
 
 ##  Description
@@ -31,7 +36,8 @@ The output is saved to a `.txt` file with name `[repo]-formatted-prompt.txt`, in
 This repository is forked from andrewgcodes repo2prompt, and includes various improvements:
 
 * Cleaner structure, formatting, and direct script running.
-* Using GitHub `tree` API for recursive directory retrieval
+* Using GitHub `tree` API for recursive directory retrieval.
+* Using caching system for previously fetched data.
 
 
 
