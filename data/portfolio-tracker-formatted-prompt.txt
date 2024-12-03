@@ -1047,25 +1047,23 @@ h1, h2, h3, h4, h5, h6 {
     ```
 from portfolio_tracker.layout import create_layout
 from portfolio_tracker.loader import DataLoader
-from portfolio_tracker.manager import Stocks
+from portfolio_tracker.manager import PortfolioManager
 from portfolio_tracker.config import config
-import pandas as pd
-from dash import Dash
+from dash import Dash, Input, Output
 
 # Load data
 data_loader = DataLoader(config.type1_path)
 type1_data = data_loader.get_type1_data()
 
 # Process stock transactions
-stocks = Stocks()
-stocks.process_transactions(type1_data)
-
-# Calculate gains
-realized_gains_df = stocks.generate_realized_gains_dataframe()  # Move logic to `Stocks`
+portfolio_manager = PortfolioManager(type1_data, asset_type="stock")
+realized_gains_df = portfolio_manager.stocks.generate_realized_gains_dataframe()  
+portfolio_overview = portfolio_manager.get_portfolio_overview()
 
 # Create Dash app
 app = Dash(__name__)
-app.layout = create_layout(realized_gains_df)
+app.layout = create_layout(realized_gains_df, portfolio_overview)
+
 
 # Run the app
 if __name__ == "__main__":
@@ -1106,6 +1104,7 @@ COLUMNS_TO_FORMAT = [
     "Total value sold",
 ]
 DATE_COLUMN = "Date last sell"
+
 
 # Formatting helper
 def format_dataframe(df):
@@ -1229,6 +1228,7 @@ def fetch_crypto_price(symbol, currency="USD"):
     portfolio_tracker/layout.py:
     ```
 import dash_bootstrap_components as dbc
+import pandas as pd
 from dash import dcc, html
 from dash.dash_table import DataTable
 
@@ -1246,7 +1246,7 @@ colors = [
 ]
 
 
-def generate_style_data_conditional():
+def generate_style_data_conditional() -> list:
     """Generate conditional styles for the DataTable."""
     style_data_conditional = []
     for col, bands in column_band_mapping.items():
@@ -1266,7 +1266,7 @@ def generate_style_data_conditional():
     return style_data_conditional
 
 
-def create_layout(df_realized_gains):
+def create_layout(df_realized_gains: pd.DataFrame, portfolio_overview: pd.DataFrame):
     """Create the layout for the Dash app."""
     style_data_conditional = generate_style_data_conditional()
 
@@ -1278,6 +1278,41 @@ def create_layout(df_realized_gains):
                     html.H1("Portfolio Tracker", className="text-center mb-4"),
                     width=12,
                 )
+            ),
+            # Portfolio Overview Table
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Card(
+                            [
+                                dbc.CardHeader(html.H4("Portfolio Overview")),
+                                dbc.CardBody(
+                                    DataTable(
+                                        data=portfolio_overview.reset_index().to_dict("records"),
+                                        columns=[
+                                            {"name": "Metric", "id": "Metric"},
+                                            {"name": "Stocks", "id": "Stocks"},
+                                        ],
+                                        id="portfolio-overview-table",
+                                        style_table={"overflowX": "auto"},
+                                        style_data={
+                                            "backgroundColor": "rgb(50, 50, 50)",
+                                            "color": "white",
+                                        },
+                                        style_cell={"textAlign": "center"},
+                                        style_header={
+                                            "fontWeight": "bold",
+                                            "backgroundColor": "rgb(30, 30, 30)",
+                                            "color": "white",
+                                        },
+                                    )
+                                ),
+                            ],
+                            className="shadow-sm mb-4",
+                        ),
+                        width=12,
+                    ),
+                ]
             ),
             # Realized Gains Table
             dbc.Row(
@@ -1322,8 +1357,8 @@ def create_layout(df_realized_gains):
             # Interval component
             dcc.Interval(id="interval-component", interval=1 * 1000, n_intervals=0),
         ],
-        fluid=True,  # Use the fluid container for responsiveness
-        className="p-4",  # Add padding for a cleaner look
+        fluid=True,
+        className="p-4",
     )
 
     ```
@@ -1399,22 +1434,18 @@ class DataLoader:
 
     portfolio_tracker/manager.py:
     ```
-"""
-Latest updates: 03/Aug/24
-    - Stocks class: Process transactions and update the owned shares dictionary.
-    - PortfolioManager class: current_portfolio_value, stock_percentage_of_portfolio
-
-"""
-
 import pandas as pd
 from collections import deque
+
+from portfolio_tracker.config import format_dataframe
 from portfolio_tracker.data_fetching import fetch_stock_prices, fetch_exchange_rate
 
 
 class Stocks:
-    def __init__(self):
+    def __init__(self) -> None:
         # Dictionary to track owned shares for each stock, where each stock maps to a deque of lots
         self.owned_shares = {}
+        self.investment_per_asset = {}
         # Track total realized gains and gains per asset
         self.realized_gains = 0
         self.realized_gains_per_asset = {}
@@ -1423,7 +1454,7 @@ class Stocks:
         # Initialize exchange rates
         self.exchange_rates = {}
 
-    def process_transactions(self, transactions):
+    def process_transactions(self, transactions: pd.DataFrame) -> None:
         """
         Process transactions and update the owned shares dictionary.
 
@@ -1475,18 +1506,21 @@ class Stocks:
 
             if security not in self.owned_shares:
                 self.owned_shares[security] = deque()
+                self.investment_per_asset[security] = 0
 
             if action == "buy":
                 # Add the new purchase as a lot to the deque for this security
                 self.owned_shares[security].append((quantity, price_per_share))
+                self.investment_per_asset[security] += total_price
             elif action == "sell":
                 self._sell_shares(security, quantity, price_per_share, date)
 
             # Remove the security from owned_shares if the total quantity is zero
             if sum(quantity for quantity, _ in self.owned_shares[security]) <= 0:
                 del self.owned_shares[security]
+                del self.investment_per_asset[security]
 
-    def _sell_shares(self, security, quantity, selling_price, transaction_date):
+    def _sell_shares(self, security: str, quantity: float, selling_price: float, transaction_date) -> None:
         """
         Helper function to sell shares using the FIFO method and update realized gains.
 
@@ -1524,6 +1558,7 @@ class Stocks:
                     lot_quantity - remaining_quantity,
                     lot_price,
                 )
+                self.investment_per_asset[security] -= remaining_quantity * lot_price
                 remaining_quantity = 0
             else:
                 realized_gain = lot_quantity * (selling_price - lot_price)
@@ -1537,13 +1572,14 @@ class Stocks:
                     ]  # (realized_gains, total_sold_value, total_shares_sold, date_of_last_sell)  # 0
                 self.realized_gains_per_asset[security][0] += realized_gain
                 remaining_quantity -= lot_quantity
+                self.investment_per_asset[security] -= lot_quantity * lot_price
                 self.owned_shares[security].popleft()
 
         self.realized_gains_per_asset[security][1] += quantity * selling_price
         self.realized_gains_per_asset[security][2] += quantity
         self.realized_gains_per_asset[security][3] = transaction_date
 
-    def get_owned_assets(self):
+    def get_owned_assets(self) -> dict[str, float]:
         """
         Get the current number of shares owned for each stock.
 
@@ -1557,7 +1593,7 @@ class Stocks:
 
         return owned_assets
 
-    def fetch_current_values(self):
+    def fetch_current_values(self) -> tuple[dict, dict]:
         """
         Fetch the current values and unrealized gains of the stocks currently owned.
 
@@ -1587,7 +1623,7 @@ class Stocks:
 
         return current_values, self.unrealized_gains_per_asset
 
-    def get_realized_gains(self):
+    def get_realized_gains(self) -> tuple[float, dict]:
         """
         Get the total realized gains and realized gains per asset.
 
@@ -1596,14 +1632,16 @@ class Stocks:
         - realized_gains_per_asset (dict): A dictionary where keys are stock names and values are realized gains in USD.
         """
         return self.realized_gains, self.realized_gains_per_asset
-    
-    def generate_realized_gains_dataframe(self):
+
+    def generate_realized_gains_dataframe(self) -> pd.DataFrame:
         """Build and return the DataFrame for realized gains."""
         _, realized_gains_dict = self.get_realized_gains()
 
         data = []
         for asset, gains_data in realized_gains_dict.items():
-            realized_gains, total_sold_value, total_shares_sold, date_of_last_sell = gains_data
+            realized_gains, total_sold_value, total_shares_sold, date_of_last_sell = (
+                gains_data
+            )
             data.append(
                 [
                     asset,
@@ -1627,25 +1665,19 @@ class Stocks:
 
         # Add additional columns
         df["Initial investment"] = df["Total value sold"] + df["Realized gains"]
-        df["Rate of return (%)"] = (
-            df["Realized gains"] / df["Initial investment"] * 100
-        )
+        df["Rate of return (%)"] = df["Realized gains"] / df["Initial investment"] * 100
         df["Date last sell"] = pd.to_datetime(df["Date last sell"])
-
-        # Format the DataFrame
-        from portfolio_tracker.config import format_dataframe
 
         return format_dataframe(df)
 
 
 class PortfolioManager:
-    def __init__(self, transactions, asset_type: str):
+    def __init__(self, transactions: pd.DataFrame, asset_type: str) -> None:
         self.transactions = transactions
         self.stocks = Stocks()
         self.stocks.process_transactions(
             self.transactions[
                 (self.transactions["type_of_asset"] == "stock")
-                | (self.transactions["type_of_asset"] == "index_fund")
             ]
         )
         self._current_values = None
@@ -1689,6 +1721,35 @@ class PortfolioManager:
 
         return stock_percentages
 
+    def get_portfolio_overview(self) -> pd.DataFrame:
+        """Computes the portfolio overview for Index Funds and Stocks.
+
+        Returns:
+        - pd.DataFrame: A DataFrame with columns 'Index Funds' and 'Stocks',
+          and rows ['Current Value', 'Investment', 'Unrealized Gains'].
+        """
+        # Ensure current values are updated
+        if self._current_values is None:
+            self._update_current_values()
+
+        # Calculate current values and unrealized gains
+        current_values, unrealized_gains = self.stocks.fetch_current_values()
+
+        owned_stocks = {
+            k: v for k, v in self.stocks.investment_per_asset.items()
+            if self.transactions[self.transactions["security"] == k]["type_of_asset"].iloc[0] == "stock"
+        }
+        total_investment_stocks = sum(owned_stocks.values())
+        current_value_stocks = sum(current_values.get(k, 0) for k in owned_stocks.keys())
+        unrealized_gains_stocks = sum(unrealized_gains.get(k, 0) for k in owned_stocks.keys())
+
+        # Create overview DataFrame
+        overview = {
+            "Metric": ["Current Value", "Investment", "Unrealized Gains"],
+            "Stocks": [current_value_stocks, total_investment_stocks, unrealized_gains_stocks],
+        }
+
+        return pd.DataFrame(overview).set_index("Metric")
     ```
 
     portfolio_tracker/utils.py:

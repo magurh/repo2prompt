@@ -9,9 +9,9 @@ load_dotenv()
 
 @dataclass(frozen=True, kw_only=True)
 class Config:
-    github_tuken: str
+    github_token: str
     data_path: Path
-    rep_url: str
+    repo_url: str
 
 
 def load_env_var(var_name: str) -> str:
