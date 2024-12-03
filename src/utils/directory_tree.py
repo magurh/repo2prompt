@@ -23,7 +23,7 @@ def build_directory_tree(
         else:
             tree_str += "    " * indent + f"{item['name']}\n"
             if item["name"].endswith(
-                (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md")
+                (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md", ".go")
             ):
                 file_paths.append((indent, item["path"]))
     return tree_str, file_paths
