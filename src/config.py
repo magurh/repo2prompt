@@ -21,6 +21,7 @@ def load_env_var(var_name: str) -> str:
         raise ValueError(msg)
     return env_var
 
+
 def create_path(folder_name: str) -> Path:
     path = Path(__file__).parent.resolve().parent / f"{folder_name}"
     path.mkdir(exist_ok=True)

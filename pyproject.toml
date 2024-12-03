@@ -8,4 +8,5 @@ dependencies = [
     "dataclasses>=0.8",
     "pathlib>=1.0.1",
     "requests>=2.32.3",
+    "ruff>=0.8.1",
 ]
