@@ -1,6 +1,28 @@
 from src.utils.github import fetch_repo_content
 
 
+def build_tree_from_tree(tree_data) -> tuple[str, list]:
+    """Build directory structure and collect file paths using the GitHub tree API response."""
+    tree_str = ""
+    file_paths = []
+
+    for item in tree_data:
+        if ".github" in item["path"].split("/"):
+            continue  # Skip .github directory
+
+        # Check if it's a file or directory
+        if item["type"] == "tree":  # GitHub API uses 'tree' for directories
+            tree_str += f"[{item['path']}/]\n"
+        elif item["type"] == "blob":  # GitHub API uses 'blob' for files
+            tree_str += f"{item['path']}\n"
+            if item["path"].endswith(
+                (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md", ".go")
+            ):
+                file_paths.append(item["path"])
+
+    return tree_str, file_paths
+
+
 def build_directory_tree(
     owner: str,
     repo: str,
@@ -26,26 +48,4 @@ def build_directory_tree(
                 (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md", ".go")
             ):
                 file_paths.append((indent, item["path"]))
-    return tree_str, file_paths
-
-
-def build_tree_from_tree(tree_data) -> tuple[str, list]:
-    """Build directory structure and collect file paths using the GitHub tree API response."""
-    tree_str = ""
-    file_paths = []
-
-    for item in tree_data:
-        if ".github" in item["path"].split("/"):
-            continue  # Skip .github directory
-
-        # Check if it's a file or directory
-        if item["type"] == "tree":  # GitHub API uses 'tree' for directories
-            tree_str += f"[{item['path']}/]\n"
-        elif item["type"] == "blob":  # GitHub API uses 'blob' for files
-            tree_str += f"{item['path']}\n"
-            if item["path"].endswith(
-                (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md")
-            ):
-                file_paths.append(item["path"])
-
     return tree_str, file_paths
