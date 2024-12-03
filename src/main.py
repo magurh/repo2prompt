@@ -1,6 +1,5 @@
 from src.config import config
 from src.utils.directory_tree import (
-    build_directory_tree,
     build_tree_from_tree,
 )
 from src.utils.file_handling import save_to_file
@@ -11,12 +10,16 @@ from src.utils.github import (
     parse_github_url,
 )
 
-def retrieve_github_repo_info(url: str, token: str = None) -> str:
-    """Retrieve and format repository information."""
-    owner, repo = parse_github_url(url)
 
+def retrieve_github_repo_info(url: str, token: str = None) -> tuple[str, int]:
+    """Retrieve and format repository information with API call tracking."""
+    owner, repo = parse_github_url(url)
+    # Initialize api counter
+    api_calls = 0
+
+    # Fetch README.md
     try:
-        # Fetch README.md
+        api_calls += 1
         readme_info = fetch_repo_content(owner, repo, "README.md", token)
         readme_content = get_file_content(readme_info)
         formatted_string = f"README.md:\n```\n{readme_content}\n```\n\n"
@@ -24,6 +27,7 @@ def retrieve_github_repo_info(url: str, token: str = None) -> str:
         formatted_string = "README.md: Not found or error fetching README\n\n"
 
     # Fetch entire repo tree
+    api_calls += 1
     tree_data = fetch_repo_tree(owner, repo, token)
     directory_tree, file_paths = build_tree_from_tree(tree_data)
 
@@ -31,18 +35,29 @@ def retrieve_github_repo_info(url: str, token: str = None) -> str:
 
     # Fetch content for included files
     for path in file_paths:
+        api_calls += 1
         file_info = fetch_repo_content(owner, repo, path, token)
         file_content = get_file_content(file_info)
-        formatted_string += (
-            f"{path}:\n```\n{file_content}\n```\n\n"
-        )
+        formatted_string += f"{path}:\n```\n{file_content}\n```\n\n"
 
-    return formatted_string
+    return formatted_string, api_calls
 
+
+def _fetch_readme_content(owner: str, repo: str, token: str = None) -> str:
+    """Fetch README.md content."""
+    readme_info = fetch_repo_content(owner, repo, "README.md", token)
+    return get_file_content(readme_info)
+
+
+def _fetch_file_content(owner: str, repo: str, path: str, token: str = None) -> str:
+    """Fetch file content."""
+    file_info = fetch_repo_content(owner, repo, path, token)
+    return get_file_content(file_info)
 
 
 def main() -> None:
-    formatted_repo_info = retrieve_github_repo_info(
+    """Main entry point for the script."""
+    formatted_repo_info, api_calls = retrieve_github_repo_info(
         config.repo_url, token=config.github_token
     )
     output_file_name = (
@@ -50,6 +65,7 @@ def main() -> None:
     )
     save_to_file(output_file_name, formatted_repo_info)
     print(f"Repository information has been saved to {output_file_name}")
+    print(f"Total API calls made: {api_calls}")
 
 
 if __name__ == "__main__":

@@ -28,9 +28,8 @@ def build_directory_tree(
                 file_paths.append((indent, item["path"]))
     return tree_str, file_paths
 
-def build_tree_from_tree(
-    tree_data
-) -> tuple[str, list]:
+
+def build_tree_from_tree(tree_data) -> tuple[str, list]:
     """Build directory structure and collect file paths using the GitHub tree API response."""
     tree_str = ""
     file_paths = []
@@ -44,7 +43,9 @@ def build_tree_from_tree(
             tree_str += f"[{item['path']}/]\n"
         elif item["type"] == "blob":  # GitHub API uses 'blob' for files
             tree_str += f"{item['path']}\n"
-            if item["path"].endswith((".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md")):
+            if item["path"].endswith(
+                (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md")
+            ):
                 file_paths.append(item["path"])
 
     return tree_str, file_paths
