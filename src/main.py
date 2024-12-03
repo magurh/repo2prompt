@@ -11,11 +11,10 @@ from src.utils.github import (
 )
 
 
-def retrieve_github_repo_info(url: str, token: str = None) -> tuple[str, int]:
+def retrieve_github_repo_info(url: str, token: str = None, folder_path: str = "") -> tuple[str, int]:
     """Retrieve and format repository information with API call tracking."""
     owner, repo = parse_github_url(url)
-    # Initialize api counter
-    api_calls = 0
+    api_calls = 0  # Initialize API call counter
 
     # Fetch README.md
     try:
@@ -29,6 +28,13 @@ def retrieve_github_repo_info(url: str, token: str = None) -> tuple[str, int]:
     # Fetch entire repo tree
     api_calls += 1
     tree_data = fetch_repo_tree(owner, repo, token)
+
+    # Filter tree data to include only the specified folder
+    if folder_path:
+        tree_data = [
+            item for item in tree_data if item["path"].startswith(folder_path)
+        ]
+
     directory_tree, file_paths = build_tree_from_tree(tree_data)
 
     formatted_string += f"Directory Structure:\n{directory_tree}\n"
@@ -41,6 +47,7 @@ def retrieve_github_repo_info(url: str, token: str = None) -> tuple[str, int]:
         formatted_string += f"{path}:\n```\n{file_content}\n```\n\n"
 
     return formatted_string, api_calls
+
 
 
 def _fetch_readme_content(owner: str, repo: str, token: str = None) -> str:
@@ -58,7 +65,7 @@ def _fetch_file_content(owner: str, repo: str, path: str, token: str = None) -> 
 def main() -> None:
     """Main entry point for the script."""
     formatted_repo_info, api_calls = retrieve_github_repo_info(
-        config.repo_url, token=config.github_token
+        config.repo_url, token=config.github_token, folder_path=config.folder_path,
     )
     output_file_name = (
         config.data_path / f"{config.repo_url.split('/')[-1]}-formatted-prompt.txt"

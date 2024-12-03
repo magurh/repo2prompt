@@ -38,6 +38,6 @@ This repository is forked from andrewgcodes repo2prompt, and includes various im
 * Cleaner structure, formatting, and direct script running.
 * Using GitHub `tree` API for recursive directory retrieval.
 * Using caching system for previously fetched data.
-
+* Allow calls to specific subfolders of a repository.
 
 
