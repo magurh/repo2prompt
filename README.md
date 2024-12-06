@@ -13,7 +13,7 @@ uv sync --all-extras
 
 
 Introduce the desired Github repository URL into the `.env` file. 
-For better rate limit, generate a Github access token, as described here.
+For better rate limit, generate a Github access token, as described in the [github docs](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
 Note, however, that Github is still limited to 5,000 API requests per hour even with a token.
 For private repositories, make sure that the token has the appropriate permissions.
 

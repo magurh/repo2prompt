@@ -1,3 +1,4 @@
+from src.config import config
 from src.utils.github import fetch_repo_content
 
 
@@ -16,7 +17,7 @@ def build_tree_from_tree(tree_data) -> tuple[str, list]:
         elif item["type"] == "blob":  # GitHub API uses 'blob' for files
             tree_str += f"{item['path']}\n"
             if item["path"].endswith(
-                (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md", ".go")
+                config.supported_files
             ):
                 file_paths.append(item["path"])
 
@@ -45,7 +46,7 @@ def build_directory_tree(
         else:
             tree_str += "    " * indent + f"{item['name']}\n"
             if item["name"].endswith(
-                (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md", ".go")
+               config.supported_files
             ):
                 file_paths.append((indent, item["path"]))
     return tree_str, file_paths

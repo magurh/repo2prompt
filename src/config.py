@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Modify as needed
+SUPPORTED_FILES = (".py", ".ipynb", ".html", ".css", ".js", ".jsx", ".rst", ".md", ".go", ".yaml")
 
 @dataclass(frozen=True, kw_only=True)
 class Config:
@@ -14,6 +16,7 @@ class Config:
     data_path: Path
     repo_url: str
     folder_path: str
+    supported_files: tuple[str]
 
 
 def load_env_var(var_name: str) -> str:
@@ -51,4 +54,5 @@ config = Config(
     data_path=create_path("data"),
     repo_url=REPO_URL,
     folder_path=extract_folder_from_url(REPO_URL),
+    supported_files=SUPPORTED_FILES,
 )
