@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from src.config import config
 from src.utils.directory_tree import (
     build_tree_from_tree,
@@ -15,15 +16,16 @@ def retrieve_github_repo_info(url: str, token: str = None, folder_path: str = ""
     """Retrieve and format repository information with API call tracking."""
     owner, repo = parse_github_url(url)
     api_calls = 0  # Initialize API call counter
+    formatted_string = ""
 
     # Fetch README.md
     try:
         api_calls += 1
         readme_info = fetch_repo_content(owner, repo, "README.md", token)
         readme_content = get_file_content(readme_info)
-        formatted_string = f"README.md:\n```\n{readme_content}\n```\n\n"
+        formatted_string += f"README.md:\n```\n{readme_content}\n```\n\n"
     except Exception:
-        formatted_string = "README.md: Not found or error fetching README\n\n"
+        pass
 
     # Fetch entire repo tree
     api_calls += 1
@@ -40,11 +42,18 @@ def retrieve_github_repo_info(url: str, token: str = None, folder_path: str = ""
     formatted_string += f"Directory Structure:\n{directory_tree}\n"
 
     # Fetch content for included files
-    for path in file_paths:
-        api_calls += 1
-        file_info = fetch_repo_content(owner, repo, path, token)
-        file_content = get_file_content(file_info)
-        formatted_string += f"{path}:\n```\n{file_content}\n```\n\n"
+    with tqdm(total=len(file_paths), desc="Fetching file contents", unit="file") as pbar:
+        for path in file_paths:
+            api_calls += 1
+            try:
+                file_info = fetch_repo_content(owner, repo, path, token)
+                file_content = get_file_content(file_info)
+                formatted_string += f"{path}:\n```\n{file_content}\n```\n\n"
+            except Exception as e:
+                formatted_string += f"{path}: Error fetching file content ({e})\n\n"
+            
+            # Update progress bar
+            pbar.update(1) 
 
     return formatted_string, api_calls
 
